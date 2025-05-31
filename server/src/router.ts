@@ -34,6 +34,7 @@ export const router = t.router({
       }
     })
     .input(VideoSearchParams)
+    .output(z.any()) // TODO
     .query(({ input }) => {
       return searchVideos(input);
     }),
@@ -48,6 +49,7 @@ export const router = t.router({
       }
     })
     .input(z.number())
+    .output(z.any()) // TODO
     .query(({ input }) => {
       return getVideoById(input);
     }),

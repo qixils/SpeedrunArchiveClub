@@ -29,6 +29,7 @@ export const VideoSchema = z.object({
     source: MirrorSourceEnum,
     url: z.string(),
   })).default([]),
+  // TODO: channel should not be here lol
   channel: TwitchUserSchema.optional(),
 });
 
@@ -147,6 +148,23 @@ function chunk<T>(arr: T[], size: number): T[][] {
   );
 }
 
+function fixVideo(video: Video) {
+  return {
+    ...video,
+    // TODO: this can work I think but the types are not setup correctly for it
+    // created_at: new Date(video.created_at),
+    mirrors: (video.mirrors || []).map(mirror => {
+      if (mirror.source !== 'INTERNET_ARCHIVE') return mirror
+      const match = mirror.url.match(/(\d+\.m3u8)$/)
+      if (!match?.[1]) return mirror
+      return {
+        ...mirror,
+        url: `http://localhost:3000/cdn/${match}`,
+      }
+    })
+  }
+}
+
 export async function searchVideos(params: z.infer<typeof VideoSearchParams>): Promise<PaginatedResponse<Video>> {
   const conditions: string[] = [];
   const values: any[] = [];
@@ -237,8 +255,7 @@ export async function searchVideos(params: z.infer<typeof VideoSearchParams>): P
 
   return {
     items: results.map(video => ({
-      ...video,
-      created_at: new Date(video.created_at),
+      ...fixVideo(video),
       channel: channelMap.get(video.channel_id),
     })),
     totalPages,
@@ -249,10 +266,14 @@ export async function searchVideos(params: z.infer<typeof VideoSearchParams>): P
 export async function getVideoById(id: number): Promise<Video | undefined> {
   const result = await queryOne<Video>(oneVideoQuery, [id]);
 
-  return result ? {
-    ...result,
-    created_at: new Date(result.created_at),
-  } : undefined;
+  if (!result) return undefined;
+
+  const { data: [channel] } = await getUsers({ id: [String(result.channel_id)] })
+
+  return {
+    ...fixVideo(result),
+    channel,
+  }
 }
 
 export async function addVideo(video: Omit<Video, 'mirrors'>): Promise<Video> {
@@ -273,8 +294,7 @@ export async function addVideo(video: Omit<Video, 'mirrors'>): Promise<Video> {
 
   if (!result) throw new Error('Failed to insert video');
   return {
-    ...result,
-    created_at: new Date(result.created_at),
+    ...fixVideo(result),
     mirrors: [],
   };
 }
@@ -489,7 +509,7 @@ export async function findMirror(videoId: number): Promise<string | undefined> {
   const m3u8Path = getCdnM3u8Path(videoId);
   await fs.writeFile(m3u8Path, processedM3u8Text, 'utf8');
 
-  const videoUrl = `https://archive.speedrun.club/cdn/${videoId}.m3u8`;
+  const videoUrl = `${videoId}.m3u8`;
 
   // Save the mirror to the database with source 'INTERNET_ARCHIVE'
   await addMirror(videoId, 'INTERNET_ARCHIVE', videoUrl);
