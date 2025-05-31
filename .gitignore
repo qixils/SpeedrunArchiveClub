@@ -1,3 +1,8 @@
+# Secrets
+.env
+!.env.example
+resume.json
+
 # Logs
 logs
 *.log

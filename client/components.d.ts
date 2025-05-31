@@ -8,7 +8,10 @@ export {}
 /* prettier-ignore */
 declare module 'vue' {
   export interface GlobalComponents {
+    IMdiAlert: typeof import('~icons/mdi/alert')['default']
+    IMdiArrowDownDrop: typeof import('~icons/mdi/arrow-down-drop')['default']
     IMdiSearch: typeof import('~icons/mdi/search')['default']
+    IMdiVideo: typeof import('~icons/mdi/video')['default']
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
     VideoData: typeof import('./src/components/VideoData.vue')['default']
