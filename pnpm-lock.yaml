@@ -12,11 +12,11 @@ importers:
         specifier: ^5.28.0
         version: 5.76.0(vue@3.5.14(typescript@5.8.3))
       '@trpc/client':
-        specifier: ^10.29.1
-        version: 10.45.2(@trpc/server@10.45.2)
+        specifier: ^11.1.4
+        version: 11.1.4(@trpc/server@11.1.4(typescript@5.8.3))(typescript@5.8.3)
       '@trpc/server':
-        specifier: ^10.29.1
-        version: 10.45.2
+        specifier: ^11.1.4
+        version: 11.1.4(typescript@5.8.3)
       vue:
         specifier: ^3.5.13
         version: 3.5.14(typescript@5.8.3)
@@ -97,8 +97,8 @@ importers:
   server:
     dependencies:
       '@trpc/server':
-        specifier: ^10.45.2
-        version: 10.45.2
+        specifier: ^11.1.4
+        version: 11.1.4(typescript@5.8.3)
       '@types/cors':
         specifier: ^2.8.18
         version: 2.8.18
@@ -125,7 +125,7 @@ importers:
         version: 5.0.1(express@5.1.0)
       trpc-to-openapi:
         specifier: ^2.3.1
-        version: 2.3.1(@trpc/server@10.45.2)(zod-openapi@4.2.4(zod@3.25.12))(zod@3.25.12)
+        version: 2.3.1(@trpc/server@11.1.4(typescript@5.8.3))(zod-openapi@4.2.4(zod@3.25.12))(zod@3.25.12)
       undici:
         specifier: ^7.10.0
         version: 7.10.0
@@ -151,19 +151,6 @@ importers:
       typescript:
         specifier: ^5.0.4
         version: 5.8.3
-
-  shared:
-    dependencies:
-      '@trpc/server':
-        specifier: ^10.29.1
-        version: 10.45.2
-    devDependencies:
-      typescript:
-        specifier: ^5.0.4
-        version: 5.8.3
-      zod:
-        specifier: ^3.21.4
-        version: 3.25.12
 
 packages:
 
@@ -979,13 +966,16 @@ packages:
       '@vue/composition-api':
         optional: true
 
-  '@trpc/client@10.45.2':
-    resolution: {integrity: sha512-ykALM5kYWTLn1zYuUOZ2cPWlVfrXhc18HzBDyRhoPYN0jey4iQHEFSEowfnhg1RvYnrAVjNBgHNeSAXjrDbGwg==}
+  '@trpc/client@11.1.4':
+    resolution: {integrity: sha512-QDaIdwhZlHKMhDAr5m4dJNAYkX4ydo63Up0M01mGcdpnOOmGlvGMRWzdVSLIvGc1JasPSvC15RsgrjMzXpElzw==}
     peerDependencies:
-      '@trpc/server': 10.45.2
+      '@trpc/server': 11.1.4
+      typescript: '>=5.7.2'
 
-  '@trpc/server@10.45.2':
-    resolution: {integrity: sha512-wOrSThNNE4HUnuhJG6PfDRp4L2009KDVxsd+2VYH8ro6o/7/jwYZ8Uu5j+VaW+mOmc8EHerHzGcdbGNQSAUPgg==}
+  '@trpc/server@11.1.4':
+    resolution: {integrity: sha512-X3TSLwQQh5+zi+yY7BnnmUUwVNdeBj3BAt580sAJ+Qd5PvDhz1gSNHGOAlOLulCFn6g/JHf8n+DbnPF/Gb63SA==}
+    peerDependencies:
+      typescript: '>=5.7.2'
 
   '@tsconfig/node22@22.0.1':
     resolution: {integrity: sha512-VkgOa3n6jvs1p+r3DiwBqeEwGAwEvnVCg/hIjiANl5IEcqP3G0u5m8cBJspe1t9qjZRlZ7WFgqq5bJrGdgAKMg==}
@@ -3435,11 +3425,14 @@ snapshots:
       vue: 3.5.14(typescript@5.8.3)
       vue-demi: 0.14.10(vue@3.5.14(typescript@5.8.3))
 
-  '@trpc/client@10.45.2(@trpc/server@10.45.2)':
+  '@trpc/client@11.1.4(@trpc/server@11.1.4(typescript@5.8.3))(typescript@5.8.3)':
     dependencies:
-      '@trpc/server': 10.45.2
+      '@trpc/server': 11.1.4(typescript@5.8.3)
+      typescript: 5.8.3
 
-  '@trpc/server@10.45.2': {}
+  '@trpc/server@11.1.4(typescript@5.8.3)':
+    dependencies:
+      typescript: 5.8.3
 
   '@tsconfig/node22@22.0.1': {}
 
@@ -5051,9 +5044,9 @@ snapshots:
 
   totalist@3.0.1: {}
 
-  trpc-to-openapi@2.3.1(@trpc/server@10.45.2)(zod-openapi@4.2.4(zod@3.25.12))(zod@3.25.12):
+  trpc-to-openapi@2.3.1(@trpc/server@11.1.4(typescript@5.8.3))(zod-openapi@4.2.4(zod@3.25.12))(zod@3.25.12):
     dependencies:
-      '@trpc/server': 10.45.2
+      '@trpc/server': 11.1.4(typescript@5.8.3)
       co-body: 6.2.0
       h3: 1.15.1
       openapi3-ts: 4.4.0

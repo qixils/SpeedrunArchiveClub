@@ -28,33 +28,6 @@ async function saveResume(idx: number, found: number) {
 }
 
 async function main() {
-  if ((2 % 2) === 3) {
-    // TODO: load basic video metadata
-    const csvFile = await fs.readFile("C:\\Users\\lexikiq\\.vodbot-twitch\\vods\\twitch_matches.csv", { encoding: 'utf-8' })
-    const csv = (csvFile || '').trim().split(/\s+/).map(line => {
-      const [videoId, twitchId] = line.trim().split(',')
-      return { videoId, twitchId }
-    }).sort((a, b) => a.twitchId.localeCompare(b.twitchId))
-
-    for (const line of csv) {
-      const twitchId = parseInt(line.twitchId?.split('_')?.[0])
-      if (isNaN(twitchId)) {
-        console.error("Invalid video", line)
-        continue
-      }
-      try {
-        await addMirror(twitchId, 'YOUTUBE', `https://youtu.be/${line.videoId}`)
-      } catch (e: any) {
-        const error = 'detail' in e && e.detail ? e.detail : e
-        if (!String(error).includes('already exists')) {
-          console.error('Failed to add mirror', error)
-        }
-      }
-    }
-
-    console.log('Added', csv.length, "YouTube video mirrors")
-  }
-
   const addedDir = "C:\\Users\\lexikiq\\IdeaProjects\\twitch-items\\added";
   const files = await fs.readdir(addedDir);
 
@@ -64,7 +37,7 @@ async function main() {
 
   let totalFiles = zstFiles.length;
   let totalVideos = 0;
-  const batchSize = 10;
+  const batchSize = 20;
 
   // Load and decompress all files, collect video IDs
   const allVideoIds = new Set<number>();
@@ -108,6 +81,31 @@ async function main() {
   let foundVideos = resumeFound;
   if (resumeIdx > 0 || resumeFound > 0) {
     console.log(`Resuming from video index ${resumeIdx + 1}, foundVideos=${foundVideos}`);
+  } else {
+    // TODO: load basic video metadata
+    const csvFile = await fs.readFile("C:\\Users\\lexikiq\\.vodbot-twitch\\vods\\twitch_matches.csv", { encoding: 'utf-8' })
+    const csv = (csvFile || '').trim().split(/\s+/).map(line => {
+      const [videoId, twitchId] = line.trim().split(',')
+      return { videoId, twitchId }
+    }).sort((a, b) => a.twitchId.localeCompare(b.twitchId))
+
+    for (const line of csv) {
+      const twitchId = parseInt(line.twitchId?.split('_')?.[0])
+      if (isNaN(twitchId)) {
+        console.error("Invalid video", line)
+        continue
+      }
+      try {
+        await addMirror(twitchId, 'YOUTUBE', `https://youtu.be/${line.videoId}`)
+      } catch (e: any) {
+        const error = 'detail' in e && e.detail ? e.detail : e
+        if (!String(error).includes('already exists')) {
+          console.error('Failed to add mirror', error)
+        }
+      }
+    }
+
+    console.log('Added', csv.length, "YouTube video mirrors")
   }
 
   let videoIdx = resumeIdx;

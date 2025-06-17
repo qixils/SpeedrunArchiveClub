@@ -16,8 +16,8 @@
   },
   "dependencies": {
     "@tanstack/vue-query": "^5.28.0",
-    "@trpc/client": "^10.29.1",
-    "@trpc/server": "^10.29.1",
+    "@trpc/client": "^11.1.4",
+    "@trpc/server": "^11.1.4",
     "vue": "^3.5.13",
     "vue-router": "^4.5.0",
     "zod": "^3.21.4"

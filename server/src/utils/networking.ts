@@ -5,8 +5,8 @@ setGlobalDispatcher(new Agent({ connect: { timeout: 30000 } }));
 const UA = `@qixils.dev/${Date.now()}`
 let lastRequest = 0
 export const twitchLimit = 75
-export const iaLimit = 285
-export const webIaLimit = 170
+export const iaLimit = 270
+export const webIaLimit = 155
 
 // Networking functions
 

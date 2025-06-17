@@ -1,11 +1,10 @@
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue';
 import { QueryClient, useQuery } from '@tanstack/vue-query';
-import { trpc } from '../utils/trpc';
+import { trpc, type RouterOutput } from '../utils/trpc';
 import VideoData from '../components/VideoData.vue';
 import { VideoTypeEnum, MirrorSourceEnum } from '../../../server/src/types/query';
 import type { z } from 'zod';
-import type { RouterOutput } from '../utils/trpc';
 
 type SearchResult = RouterOutput['findVideos'];
 type Video = SearchResult['items'][number];
