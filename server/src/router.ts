@@ -1,8 +1,9 @@
 import { initTRPC, TRPCError } from '@trpc/server';
-import { OpenApiMeta } from 'trpc-to-openapi';
+import type { OpenApiMeta } from 'trpc-to-openapi';
 import { z } from 'zod';
-import { VideoSchema, VideoSearchParams, searchVideos, getVideoById, addVideo, addMirror } from './utils/videos';
+import { searchVideos, getVideoById, addVideo, addMirror } from './utils/videos';
 import { MirrorSourceEnum } from './types/query';
+import { PaginatedResponseSchema, VideoOutputSchema, VideoSchema, VideoSearchParamsSchema } from './types/videos';
 
 type Context = {
   adminSecret?: string;
@@ -33,8 +34,8 @@ export const router = t.router({
         summary: 'Search for videos',
       }
     })
-    .input(VideoSearchParams)
-    .output(z.any()) // TODO
+    .input(VideoSearchParamsSchema)
+    .output(PaginatedResponseSchema(VideoOutputSchema))
     .query(({ input }) => {
       return searchVideos(input);
     }),
@@ -48,14 +49,16 @@ export const router = t.router({
         summary: 'Get video by ID'
       }
     })
-    .input(z.number())
-    .output(z.any()) // TODO
-    .query(({ input }) => {
-      return getVideoById(input);
+    .input(z.object({
+      id: z.number(),
+    }))
+    .output(VideoOutputSchema.optional())
+    .query(({ input: { id } }) => {
+      return getVideoById(id);
     }),
 
   addVideo: adminProcedure
-    .input(VideoSchema.omit({ mirrors: true }))
+    .input(VideoSchema.omit({ mirrors: true })) // TODO: probably could handle mirrors
     .mutation(({ input }) => {
       return addVideo(input);
     }),

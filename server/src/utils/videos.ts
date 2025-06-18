@@ -1,60 +1,12 @@
 import fs from 'fs/promises';
-import { z } from 'zod';
 import { query, queryOne } from './db';
 import { getUsers } from './twitch';
 import { getCdnBaseDir, getCdnM3u8Path } from './cdn-path';
-import { MirrorSourceEnum, VideoTypeEnum } from '../types/query';
-import { ChannelVideoCoreResponse, VideoMetadataResponse, PlaybackAccessTokenResponse } from '../types/gql';
+import type { MirrorSource, VideoType } from '../types/query';
+import type { ChannelVideoCoreResponse, VideoMetadataResponse } from '../types/gql';
 import { fetchJson, fetchJsonWithUrl, fetchText } from './networking';
 import { WaybackAvailableSchema } from '../types/ia';
-
-export const TwitchUserSchema = z.object({
-  id: z.string(),
-  login: z.string(),
-  display_name: z.string(),
-  profile_image_url: z.string(),
-}).nullable();
-
-export const VideoSchema = z.object({
-  id: z.coerce.number().int(),
-  channel_id: z.coerce.number().int(),
-  title: z.string(),
-  duration_seconds: z.coerce.number().int(),
-  view_count: z.coerce.number().int(),
-  language: z.string().optional(),
-  type: VideoTypeEnum,
-  created_at: z.date(),
-  mirrors: z.array(z.object({
-    id: z.coerce.number().int(),
-    source: MirrorSourceEnum,
-    url: z.string(),
-  })).default([]),
-  // TODO: channel should not be here lol
-  channel: TwitchUserSchema.optional(),
-});
-
-export type Video = z.infer<typeof VideoSchema>;
-
-// Response from SQL search query
-export const VideoQuerySchema = z.array(VideoSchema.extend({
-  // TODO: mirrors should be moved here too
-  full_count: z.coerce.number().int().default(0),
-}))
-
-export type VideoQuery = z.infer<typeof VideoQuerySchema>;
-
-export const VideoSearchParams = z.object({
-  query: z.string(),
-  types: z.array(VideoTypeEnum).optional(),
-  acceptableMirrors: z.array(MirrorSourceEnum).optional(),
-  page: z.number().int().min(1).default(1),
-});
-
-export interface PaginatedResponse<T> {
-  items: T[];
-  totalPages: number;
-  currentPage: number;
-}
+import { type PaginatedResponse, type Video, type VideoOutput, type VideoQuery, VideoQuerySchema, type VideoSearchParams } from '../types/videos';
 
 // TODO: improve pagination performance (since this dataset is fairly static: https://dba.stackexchange.com/a/308354)
 const ITEMS_PER_PAGE = 250;
@@ -165,7 +117,7 @@ function fixVideo(video: Video) {
   }
 }
 
-export async function searchVideos(params: z.infer<typeof VideoSearchParams>): Promise<PaginatedResponse<Video>> {
+export async function searchVideos(params: VideoSearchParams): Promise<PaginatedResponse<VideoOutput>> {
   const conditions: string[] = [];
   const values: any[] = [];
   let paramCount = 1;
@@ -263,7 +215,7 @@ export async function searchVideos(params: z.infer<typeof VideoSearchParams>): P
   };
 }
 
-export async function getVideoById(id: number): Promise<Video | undefined> {
+export async function getVideoById(id: number): Promise<VideoOutput | undefined> {
   const result = await queryOne<Video>(oneVideoQuery, [id]);
 
   if (!result) return undefined;
@@ -310,7 +262,7 @@ export async function addVideoFromMetadata(
   if (!v) throw new Error('No video data in metadata');
 
   const { title, lengthSeconds: duration_seconds, viewCount: view_count } = v;
-  const type = v.broadcastType.includes('PREMIERE') ? 'upload' : v.broadcastType.toLowerCase() as z.infer<typeof VideoTypeEnum>;
+  const type = v.broadcastType.includes('PREMIERE') ? 'upload' : v.broadcastType.toLowerCase() as VideoType;
   const id = parseInt(v.id);
   const channel_id = parseInt(v.owner.id);
   const created_at = new Date(v.createdAt);
@@ -330,7 +282,7 @@ export async function addVideoFromMetadata(
   return inserted;
 }
 
-export async function addMirror(videoId: number, source: z.infer<typeof MirrorSourceEnum>, url: string): Promise<void> {
+export async function addMirror(videoId: number, source: MirrorSource, url: string): Promise<void> {
   await query(`
     INSERT INTO mirrors (id, source, url)
     VALUES ($1, $2, $3)

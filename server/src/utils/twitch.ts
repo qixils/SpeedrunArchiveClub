@@ -1,6 +1,6 @@
 import "dotenv/config";
 import { fetchJson } from "./networking";
-import { MergeExclusive, Promisable } from "type-fest";
+import type { MergeExclusive, Promisable } from "type-fest";
 
 interface RawCredentials {
   access_token: string
