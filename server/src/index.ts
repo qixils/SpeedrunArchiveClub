@@ -1,6 +1,6 @@
 import { createExpressMiddleware } from '@trpc/server/adapters/express';
 import { createOpenApiExpressMiddleware, generateOpenApiDocument } from 'trpc-to-openapi';
-import express, { NextFunction, Request, Response } from 'express';
+import express, { Request, Response } from 'express';
 import { router } from './router';
 import swaggerUi from 'swagger-ui-express';
 import "dotenv/config";
@@ -38,8 +38,7 @@ async function startServer() {
   app.use('/api', createOpenApiExpressMiddleware(config));
 
   // Generate OpenAPI document
-  const baseOrigin = 'https://archive.speedrun.club'
-  const baseUrl = `/api`
+  const baseUrl = 'https://archive.speedrun.club/api'
   const openApiDocument = generateOpenApiDocument(router, {
     title: 'Speedrun Archive Club API',
     description: 'API for accessing speedrun videos',
@@ -49,37 +48,8 @@ async function startServer() {
   openApiDocument.servers = [{ url: baseUrl, description: 'Production' }]
   console.log("docs", baseUrl, JSON.stringify(openApiDocument.servers))
 
-  // swagger ui package is broken on prod??? so we write a little middleware to fkn hack it
-  function rewriteDocsHost(req: Request, res: Response, next: NextFunction) {
-    // only run in production (optional)
-    // if (process.env.NODE_ENV !== 'production') return next();
-
-    const originalSend = res.send.bind(res);
-
-    res.send = function (body?: any) {
-      try {
-        // only touch string bodies (HTML / JS)
-        if (typeof body === 'string') {
-          // replace common localhost patterns
-          body = body
-            .replace(/http:\/\/localhost:3000/g, baseOrigin)
-            // .replace(/http:\/\/127\.0\.0\.1:3000/g, baseOrigin)
-            // sometimes swagger UI produces `window.location.origin + '/api'` fragments;
-            // you can add more replacements if you find patterns in the bundle
-            ;
-        }
-      } catch (err) {
-        // if replacement fails, continue with original body
-        console.error('docs rewrite failed', err);
-      }
-      return originalSend(body);
-    };
-
-    next();
-  }
-
   // Serve Swagger UI at /docs
-  app.use('/docs', rewriteDocsHost, swaggerUi.serve, swaggerUi.setup(openApiDocument, { swaggerOptions: { urls: [{ url: baseUrl, name: 'Production' }] } }));
+  app.use('/docs', swaggerUi.serve, swaggerUi.setup(openApiDocument));
 
   // CDN endpoints
   app.get('/cdn/:videoId.m3u8', async (req: Request, res: Response) => {
