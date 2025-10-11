@@ -49,7 +49,7 @@ async function startServer() {
   console.log("docs", baseUrl, JSON.stringify(openApiDocument.servers))
 
   // Serve Swagger UI at /docs
-  app.use('/docs', swaggerUi.serve, swaggerUi.setup(openApiDocument));
+  app.use('/docs', swaggerUi.serve, swaggerUi.setup(openApiDocument, { swaggerOptions: { url: undefined } }));
 
   // CDN endpoints
   app.get('/cdn/:videoId.m3u8', async (req: Request, res: Response) => {
