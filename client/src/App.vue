@@ -31,6 +31,8 @@ onMounted(() => {
         and <a href="https://github.com/dunkyl">Dunkyl</a>
       </p>
       <nav class="flex flex-col justify-center items-center gap-2 md:flex-row">
+        <a href="/docs">API</a>
+        <span class="not-md:hidden text-neutral-700">·</span>
         <a href="https://github.com/qixils/speedrunarchiveclub">GitHub</a>
         <span class="not-md:hidden text-neutral-700">·</span>
         <a href="https://github.com/sponsors/qixils">Buy me a coffee</a>
