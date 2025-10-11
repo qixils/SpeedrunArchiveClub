@@ -37,12 +37,14 @@ async function startServer() {
   app.use('/api', createOpenApiExpressMiddleware(config));
 
   // Generate OpenAPI document
+  const baseUrl = 'https://archive.speedrun.club/api'
   const openApiDocument = generateOpenApiDocument(router, {
     title: 'Speedrun Archive Club API',
     description: 'API for accessing speedrun videos',
     version: '1.0.0',
-    baseUrl: 'https://archive.speedrun.club/api',
+    baseUrl,
   });
+  console.log("baseUrl", baseUrl)
 
   // Serve Swagger UI at /docs
   app.use('/docs', swaggerUi.serve, swaggerUi.setup(openApiDocument));
