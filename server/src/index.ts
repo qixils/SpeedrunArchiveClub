@@ -19,6 +19,7 @@ async function startServer() {
 
   const app = express();
   app.use(cors());
+  app.set('trust proxy', 'loopback, linklocal, uniquelocal');
 
   // Define context
   const createContext = ({ req }: { req: Request }) => {
