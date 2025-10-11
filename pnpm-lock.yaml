@@ -110,7 +110,7 @@ importers:
         version: 3.1.1(typescript@5.9.3)
 
   server:
-    dependencies:
+    devDependencies:
       '@keyv/compress-brotli':
         specifier: ^2.0.5
         version: 2.0.5(keyv@5.5.3)
@@ -123,6 +123,12 @@ importers:
       '@types/express':
         specifier: ^5.0.3
         version: 5.0.3
+      '@types/node':
+        specifier: ^22.18.10
+        version: 22.18.10
+      '@types/pg':
+        specifier: ^8.15.5
+        version: 8.15.5
       '@types/swagger-ui-express':
         specifier: ^4.1.8
         version: 4.1.8
@@ -138,6 +144,9 @@ importers:
       keyv:
         specifier: ^5.5.3
         version: 5.5.3
+      npm-run-all2:
+        specifier: ^8.0.4
+        version: 8.0.4
       pg:
         specifier: ^8.16.3
         version: 8.16.3
@@ -153,25 +162,6 @@ importers:
       trpc-to-openapi:
         specifier: ^3.2.0-beta.0
         version: 3.2.0-beta.0(@trpc/server@11.6.0(typescript@5.9.3))(zod-openapi@5.4.3(zod@4.1.12))(zod@4.1.12)
-      undici:
-        specifier: ^7.16.0
-        version: 7.16.0
-      zod:
-        specifier: ^4.1.12
-        version: 4.1.12
-      zod-openapi:
-        specifier: ^5.4.3
-        version: 5.4.3(zod@4.1.12)
-    devDependencies:
-      '@types/node':
-        specifier: ^22.18.10
-        version: 22.18.10
-      '@types/pg':
-        specifier: ^8.15.5
-        version: 8.15.5
-      npm-run-all2:
-        specifier: ^8.0.4
-        version: 8.0.4
       tsx:
         specifier: ^4.20.6
         version: 4.20.6
@@ -181,6 +171,15 @@ importers:
       typescript:
         specifier: ^5.9.3
         version: 5.9.3
+      undici:
+        specifier: ^7.16.0
+        version: 7.16.0
+      zod:
+        specifier: ^4.1.12
+        version: 4.1.12
+      zod-openapi:
+        specifier: ^5.4.3
+        version: 5.4.3(zod@4.1.12)
 
 packages:
 
