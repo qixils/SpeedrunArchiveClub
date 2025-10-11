@@ -1,5 +1,12 @@
 <script setup lang="ts">
+import { onMounted } from 'vue';
 import { RouterLink, RouterView } from 'vue-router'
+
+onMounted(() => {
+  window.addEventListener('vite:preloadError', () => {
+    window.location.reload()
+  })
+})
 </script>
 
 <template>

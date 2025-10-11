@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue';
+import { ref, computed, useTemplateRef, watch, shallowRef } from 'vue';
 import type { RouterOutput } from '@/utils/trpc';
 import { upperCamelCase } from '@/utils/strings';
+import Hls from 'hls.js';
 
 type VideoType = RouterOutput['findVideos']['items'][number];
 
@@ -101,6 +102,32 @@ const selectedMirror = computed(() => {
 function selectMirror(mirrorIdx: number) {
   selectedMirrorIdx.value = mirrorIdx === selectedMirrorIdx.value ? undefined : mirrorIdx;
 }
+
+const iaVideoEl = useTemplateRef('iaVideo')
+const useCorsProxy = ref(false)
+const hlsInstance = shallowRef<Hls>()
+watch([iaVideoEl, useCorsProxy], ([video, cors]) => {
+  if (hlsInstance.value) {
+    hlsInstance.value.destroy()
+    hlsInstance.value = undefined
+  }
+
+  if (!video) return
+  let videoSrc = selectedMirror.value?.url
+  if (!videoSrc) return
+
+  if (cors) videoSrc = `${videoSrc}?cors=true`;
+
+  if (Hls.isSupported()) {
+    const hls = new Hls();
+    hlsInstance.value = hls
+    hls.loadSource(videoSrc);
+    hls.attachMedia(video);
+  }
+  else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+    video.src = videoSrc;
+  }
+})
 </script>
 
 <template>
@@ -144,7 +171,7 @@ function selectMirror(mirrorIdx: number) {
     <transition @before-enter="beforeEnter" @enter="enter" @after-enter="afterEnter" @before-leave="beforeLeave"
       @leave="leave" @after-leave="afterLeave">
       <div v-show="active" ref="details">
-        <div class="flex flex-row gap-1 justify-between">
+        <div class="flex flex-row gap-1">
           <div>
             <p class="flex flex-row items-center gap-1">
               <i-mdi:clock class="size-5" />
@@ -174,10 +201,20 @@ function selectMirror(mirrorIdx: number) {
               </div>
             </div>
           </div>
-          <div v-if="selectedMirror">
+          <div v-if="selectedMirror" class="flex-1 flex flex-col gap-1 items-end">
             <template v-if="selectedMirror.source === 'INTERNET_ARCHIVE'">
-              <video :src="selectedMirror.embedUrl" controls style="width: 100%; aspect-ratio: 16/9; max-width: 560px;"
+              <video ref="iaVideo" controls style="width: 100%; aspect-ratio: 16/9; max-width: 560px;"
                 crossorigin="anonymous" playsinline></video>
+              <p class="text-end">
+                web playback may require
+                <a @click="useCorsProxy = !useCorsProxy" class="cursor-pointer"> cors proxy </a>
+                <br />or (more reliable) installing
+                <a href="/about#cors-patchers" target="_blank"> cors patchers </a>
+              </p>
+              <p class="text-end">
+                or: <a :href="selectedMirror.url">download stream file</a>
+                <br />(compatible with yt-dlp, vlc)
+              </p>
             </template>
             <template v-else-if="selectedMirror.source === 'YOUTUBE' && selectedMirror.embedUrl">
               <iframe :src="selectedMirror.embedUrl" frameborder="0"

@@ -113,7 +113,7 @@ function fixVideo(video: Video) {
       if (mirror.source !== 'INTERNET_ARCHIVE') return mirror
       return {
         ...mirror,
-        url: `http://localhost:3000/cdn/${video.id}.m3u8.zst`, // TODO
+        url: `https://archive.speedrun.club/cdn/${video.id}.m3u8`,
       }
     })
   }

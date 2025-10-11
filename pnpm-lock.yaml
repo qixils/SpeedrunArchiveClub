@@ -17,6 +17,9 @@ importers:
       '@types/lodash.isequal':
         specifier: ^4.5.8
         version: 4.5.8
+      hls.js:
+        specifier: ^1.6.13
+        version: 1.6.13
       lodash.isequal:
         specifier: ^4.5.0
         version: 4.5.0
@@ -1754,6 +1757,9 @@ packages:
   he@1.2.0:
     resolution: {integrity: sha512-F/1DnUGPopORZi0ni+CvrCgHQ5FyEAHRLSApuYWMmrbSwoN2Mn/7k+Gl38gJnR7yyDZk6WLXwiGod1JOWNDKGw==}
     hasBin: true
+
+  hls.js@1.6.13:
+    resolution: {integrity: sha512-hNEzjZNHf5bFrUNvdS4/1RjIanuJ6szpWNfTaX5I6WfGynWXGT7K/YQLYtemSvFExzeMdgdE4SsyVLJbd5PcZA==}
 
   hookable@5.5.3:
     resolution: {integrity: sha512-Yc+BQe8SvoXH1643Qez1zqLRmbA5rCL+sSmk6TVos0LWVfNIB7PGncdlId77WzLGSIB5KaWgTaNTs2lNVEI6VQ==}
@@ -4444,6 +4450,8 @@ snapshots:
       function-bind: 1.1.2
 
   he@1.2.0: {}
+
+  hls.js@1.6.13: {}
 
   hookable@5.5.3: {}
 
