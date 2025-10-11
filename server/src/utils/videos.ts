@@ -449,10 +449,10 @@ export async function findMirror(videoId: number): Promise<string | undefined> {
   let archiveM3u8Url: string | undefined = undefined;
   let maxBandwidth = 0;
   for (let i = 0; i < m3u8Lines.length; i++) {
-    const line = m3u8Lines[i];
-    if (line.startsWith('#EXT-X-STREAM-INF')) {
+    const line = m3u8Lines[i]
+    if (line?.startsWith('#EXT-X-STREAM-INF')) {
       const bandwidthMatch = line.match(/BANDWIDTH=(\d+)/);
-      const bandwidth = bandwidthMatch ? parseInt(bandwidthMatch[1]) : 0;
+      const bandwidth = bandwidthMatch?.[1] ? parseInt(bandwidthMatch[1]) : 0;
       const nextLine = m3u8Lines[i + 1];
       if (nextLine && nextLine.endsWith('.m3u8')) {
         if (nextLine.includes('chunked')) {

@@ -81,7 +81,7 @@ function getAllSubsets<T>(arr: readonly T[]): T[][] {
   for (const el of arr) {
     const len = result.length;
     for (let i = 0; i < len; i++) {
-      result.push(result[i].concat(el));
+      result.push(result[i]!.concat(el));
     }
   }
   return result.map(arr => [...new Set(arr)].sort());
