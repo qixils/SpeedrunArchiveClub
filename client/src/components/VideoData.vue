@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue';
-import type { RouterOutput } from '../utils/trpc';
+import type { RouterOutput } from '@/utils/trpc';
+import { upperCamelCase } from '@/utils/strings';
 
 type VideoType = RouterOutput['findVideos']['items'][number];
 
@@ -103,7 +104,7 @@ function selectMirror(mirrorIdx: number) {
 </script>
 
 <template>
-  <div class="bg-green-50 border-green-200 border-2 p-1 px-3 rounded">
+  <div class="bg-sky-50 border-sky-200 dark:bg-sky-950 dark:border-sky-700 border-2 p-1 px-3 rounded">
     <div class="flex flex-row justify-between gap-3">
       <div class="flex flex-row items-center gap-3">
         <!-- Profile picture from video.channel; placeholder if missing -->
@@ -118,9 +119,8 @@ function selectMirror(mirrorIdx: number) {
         </div>
         <div>
           <p>{{ video.title }}</p>
-          <p class="text-sm text-neutral-900">
-            <a @click="$emit('searchChannel', video.channel_id)"
-              class="text-green-700 hover:text-green-800 hover:underline cursor-pointer">
+          <p class="text-sm text-neutral-600 dark:text-neutral-400">
+            <a @click="$emit('searchChannel', video.channel_id)" class="hover:underline cursor-pointer">
               {{ video.channel?.display_name || video.channel_id }}
             </a>
             on {{ new Date(video.created_at).toLocaleDateString() }}
@@ -128,7 +128,9 @@ function selectMirror(mirrorIdx: number) {
         </div>
       </div>
       <div class="flex flex-row gap-1 items-center">
-        <button v-if="video.mirrors?.length" class="text-green-700 hover:text-green-800" @click="setActive()">
+        <button v-if="video.mirrors?.length"
+          class="text-emerald-700 hover:text-emerald-800 dark:text-emerald-300 dark:hover:text-emerald-200"
+          @click="setActive()">
           <!-- film camera icon to indicate an archive exists-->
           <i-mdi-video class="size-5" />
         </button>
@@ -144,21 +146,32 @@ function selectMirror(mirrorIdx: number) {
       <div v-show="active" ref="details">
         <div class="flex flex-row gap-1 justify-between">
           <div>
-            <p>Duration: {{ formatDuration(video.duration_seconds) }}</p>
-            <p>Views: {{ video.view_count.toLocaleString() }}</p>
-            <p>Language: {{ video.language ? getLanguageName(video.language) : "N/A" }}</p>
-            <p>Type: <span class="capitalize">{{ video.type }}</span></p>
+            <p class="flex flex-row items-center gap-1">
+              <i-mdi:clock class="size-5" />
+              {{ formatDuration(video.duration_seconds) }}
+            </p>
+            <p class="flex flex-row items-center gap-1">
+              <i-mdi:eye class="size-5" />
+              {{ video.view_count.toLocaleString() }}
+            </p>
+            <p class="flex flex-row items-center gap-1" v-if="video.language">
+              <i-mdi:language class="size-5" />
+              {{ getLanguageName(video.language) }}
+            </p>
+            <p class="flex flex-row items-center gap-1">
+              <i-mdi:tv-classic class="size-5" />
+              <span class="capitalize">{{ video.type }}</span>
+            </p>
 
-            <div v-if="video.mirrors?.length" class="mt-2">
-              <h3 class="font-semibold">Available Mirrors:</h3>
-              <ul class="list-disc list-inside">
-                <li v-for="(mirror, idx) in video.mirrors" class="mb-1">
-                  <button class="px-2 py-1 rounded bg-blue-100 hover:bg-blue-200 text-blue-800 font-medium"
-                    @click="selectMirror(idx)" :class="{ 'bg-blue-300': selectedMirrorIdx === idx }">
-                    {{ mirror.source }}
-                  </button>
-                </li>
-              </ul>
+            <div v-if="video.mirrors?.length">
+              <h3 class="font-semibold">Archives</h3>
+              <div class="flex flex-row gap-2">
+                <button v-for="(mirror, idx) in video.mirrors" :key="mirror.source"
+                  class="px-2 py-1 rounded bg-blue-100 hover:bg-blue-200 text-blue-800 font-medium"
+                  @click="selectMirror(idx)" :class="{ 'bg-blue-300': selectedMirrorIdx === idx }">
+                  {{ $t(`short_mirror.${mirror.source.toLowerCase()}`, upperCamelCase(mirror.source)) }}
+                </button>
+              </div>
             </div>
           </div>
           <div v-if="selectedMirror">

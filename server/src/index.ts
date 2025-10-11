@@ -52,6 +52,17 @@ async function startServer() {
         res.status(404).send('Not found');
         return;
       }
+      const lines = data.toString('utf-8').trim().split('\n')
+      const root = lines.shift()
+      if (!root) {
+        res.status(500).send('Unable to parse cdn file');
+        return;
+      }
+      for (let i = 0; i < lines.length; i++) {
+        const line = lines[i];
+        if (line.startsWith('#')) continue
+        lines[i] = `${root}${line}`
+      }
       res.setHeader('Content-Type', 'application/vnd.apple.mpegurl');
       res.send(data);
     });

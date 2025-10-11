@@ -1,0 +1,10 @@
+{
+  "mirror": {
+    "internet_archive": "Internet Archive",
+    "youtube": "YouTube"
+  },
+  "short_mirror": {
+    "internet_archive": "IA",
+    "youtube": "YT"
+  }
+}

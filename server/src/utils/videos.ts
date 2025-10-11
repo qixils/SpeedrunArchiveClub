@@ -6,10 +6,16 @@ import type { MirrorSource, VideoType } from '../types/query';
 import type { ChannelVideoCoreResponse, VideoMetadataResponse } from '../types/gql';
 import { fetchJson, fetchJsonWithUrl, fetchText } from './networking';
 import { WaybackAvailableSchema } from '../types/ia';
-import { type PaginatedResponse, type Video, type VideoOutput, type VideoQuery, VideoQuerySchema, type VideoSearchParams } from '../types/videos';
+import { type PaginatedResponse, type Video, type VideoOutput, type VideoQuery, VideoQuerySchema, VideoSchema, type VideoSearchParams } from '../types/videos';
+import { promisify } from 'util';
+import zlib from 'zlib';
+import { z } from 'zod';
+
+// Node 22.15+
+const compress = promisify((zlib as any).zstdCompress as typeof zlib.unzip);
 
 // TODO: improve pagination performance (since this dataset is fairly static: https://dba.stackexchange.com/a/308354)
-const ITEMS_PER_PAGE = 250;
+const ITEMS_PER_PAGE = 100;
 const baseVideoQuery = `
     SELECT
         v.id,
@@ -20,7 +26,6 @@ const baseVideoQuery = `
         v.language,
         v.type,
         v.created_at,
-        count(v.id) OVER() AS full_count,
         COALESCE(
             json_agg(
                 CASE WHEN m.id IS NOT NULL
@@ -37,9 +42,8 @@ const baseVideoQuery = `
     LEFT JOIN mirrors m ON v.id = m.id
     %%WHERE_CONDITIONS%%
     GROUP BY v.id
-    ORDER BY v.created_at DESC
-    LIMIT ${ITEMS_PER_PAGE}
-    OFFSET %%OFFSET%%
+    ORDER BY v.id DESC, v.created_at DESC
+    LIMIT ${ITEMS_PER_PAGE + 1}
 `;
 const oneVideoQuery = `
     SELECT
@@ -67,7 +71,7 @@ const oneVideoQuery = `
     LEFT JOIN mirrors m ON v.id = m.id
     WHERE v.id = $1
     GROUP BY v.id
-    ORDER BY v.created_at DESC
+    ORDER BY v.id DESC
     LIMIT 1
 `;
 
@@ -107,17 +111,32 @@ function fixVideo(video: Video) {
     // created_at: new Date(video.created_at),
     mirrors: (video.mirrors || []).map(mirror => {
       if (mirror.source !== 'INTERNET_ARCHIVE') return mirror
-      const match = mirror.url.match(/(\d+\.m3u8)$/)
-      if (!match?.[1]) return mirror
       return {
         ...mirror,
-        url: `http://localhost:3000/cdn/${match}`,
+        url: `http://localhost:3000/cdn/${video.id}.m3u8.zst`, // TODO
       }
     })
   }
 }
 
+const AfterSchema = z.tuple([
+  VideoSchema.shape.id,
+  z.string(),
+])
+
+function encodeAfter(video: Video): string | undefined {
+  const cursor = [video.id, video.created_at]
+  return Buffer.from(JSON.stringify(cursor)).toString("base64").replace(/=/g, '')
+}
+
+function decodeAfter(b64: string): z.output<typeof AfterSchema> {
+  const json = JSON.parse(Buffer.from(b64, "base64").toString('utf-8'))
+  return AfterSchema.parse(json)
+}
+
 export async function searchVideos(params: VideoSearchParams): Promise<PaginatedResponse<VideoOutput>> {
+  params.query = params.query.trim()
+
   const conditions: string[] = [];
   const values: any[] = [];
   let paramCount = 1;
@@ -159,12 +178,16 @@ export async function searchVideos(params: VideoSearchParams): Promise<Paginated
     }
 
     // Title search using Full Text Search
-    searchConditions.push(`v.title_tsv @@ websearch_to_tsquery('english', $${paramCount})`);
-    values.push(params.query);
-    paramCount++;
+    if (params.query) {
+      searchConditions.push(`v.title_tsv @@ websearch_to_tsquery('english', $${paramCount})`);
+      values.push(params.query);
+      paramCount++;
+    }
   }
 
-  conditions.push(`(${searchConditions.join(' OR ')})`);
+  if (searchConditions.length) {
+    conditions.push(`(${searchConditions.join(' OR ')})`);
+  }
 
   // Add type filter
   if (params.types && params.types.length > 0) {
@@ -183,13 +206,20 @@ export async function searchVideos(params: VideoSearchParams): Promise<Paginated
     values.push(...params.acceptableMirrors);
   }
 
-  const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
-  const fullQuery = baseVideoQuery.replace('%%WHERE_CONDITIONS%%', whereClause).replace('%%OFFSET%%', String((params.page - 1) * ITEMS_PER_PAGE));
+  const paramAfter = !!params.after && decodeAfter(params.after) || undefined
+  if (paramAfter) {
+    conditions.push(`(v.id, v.created_at) < ($${paramCount++}, $${paramCount++})`)
+    values.push(...paramAfter)
+  }
 
-  const results = VideoQuerySchema.parse(
+  const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
+  const fullQuery = baseVideoQuery.replace('%%WHERE_CONDITIONS%%', whereClause);
+
+  const _results = VideoQuerySchema.parse(
     await query<VideoQuery>(fullQuery, values)
   );
-  const totalPages = Math.ceil((results[0]?.full_count || 0) / ITEMS_PER_PAGE);
+  const nextAfter = _results.length > ITEMS_PER_PAGE ? encodeAfter(_results.at(-1)!) : undefined // *should* be -2 but sql < doesnt seem to totally work lol (maybe an issue with the dates)
+  const results = _results.slice(0, ITEMS_PER_PAGE)
 
   // Get channel information from Twitch in chunks of 100
   const resultChannelIds = [...new Set(results.map(v => v.channel_id))];
@@ -210,8 +240,7 @@ export async function searchVideos(params: VideoSearchParams): Promise<Paginated
       ...fixVideo(video),
       channel: channelMap.get(video.channel_id),
     })),
-    totalPages,
-    currentPage: params.page,
+    after: nextAfter,
   };
 }
 
@@ -450,21 +479,40 @@ export async function findMirror(videoId: number): Promise<string | undefined> {
     return;
   }
 
-  // Rewrite the m3u8: replace segment lines with IA-prefixed URLs
-  const prefix = iaM3u8Url.split("/").slice(0, -1).join("/") + '/$1';
-  // Replace lines that are not comments (do not start with #)
-  const processedM3u8Text = iaM3u8Text.replace(/^(?!#)([^\r\n]+)/gm, (match) => prefix.replace('$1', match));
+  // Validate m3u8 file contents (must have a non-blank non-comment line)
+  let valid = false;
+  for (const line of iaM3u8Text.trim().split('\n')) {
+    if (line.startsWith('#')) continue
+    if (!line.length) continue
+    valid = true
+    break
+  }
+  if (!valid) {
+    console.error('No video chunks found in playlist')
+    return;
+  }
+
+  // Add a new first line with the IA root URL (to be parsed by the CDN)
+  const processedM3u8Text = iaM3u8Url.split("/").slice(0, -1).join("/") + '/\n' + iaM3u8Text
+
+  let compressed: Buffer;
+  try {
+    compressed = await compress(processedM3u8Text);
+  } catch (e) {
+    console.error(`Failed to compress ${processedM3u8Text}:`, e);
+    return;
+  }
 
   // Save the processed m3u8
   const baseDir = getCdnBaseDir();
   await fs.mkdir(baseDir, { recursive: true });
   const m3u8Path = getCdnM3u8Path(videoId);
-  await fs.writeFile(m3u8Path, processedM3u8Text, 'utf8');
+  await fs.writeFile(m3u8Path, compressed);
 
-  const videoUrl = `${videoId}.m3u8`;
+  const videoUrl = `${videoId}.m3u8.zst`;
 
   // Save the mirror to the database with source 'INTERNET_ARCHIVE'
-  await addMirror(videoId, 'INTERNET_ARCHIVE', videoUrl);
+  await addMirror(videoId, 'INTERNET_ARCHIVE', '');
 
   // Return the CDN URL
   return videoUrl;

@@ -12,7 +12,7 @@ import components from 'unplugin-vue-components/vite'
 export default defineConfig({
   plugins: [
     vue(),
-    vueDevTools(),
+    // vueDevTools(),
     tailwindcss(),
     components({
       resolvers: [

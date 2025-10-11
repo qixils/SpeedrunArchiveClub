@@ -3,78 +3,76 @@ import { RouterLink, RouterView } from 'vue-router'
 </script>
 
 <template>
-  <header>
-    <div class="wrapper">
-      <nav>
-        <RouterLink to="/">Home</RouterLink>
+  <!-- todo: test mobile -->
+  <div id="root" class="flex flex-col min-h-dvh">
+    <header class="space-y-2 px-1 py-2 items-center bg-sky-100/50 dark:bg-sky-900/50">
+      <nav class="flex flex-col justify-center items-center gap-2 md:flex-row">
+        <RouterLink to="/">Search</RouterLink>
+        <span class="not-md:hidden text-neutral-700">·</span>
         <RouterLink to="/about">About</RouterLink>
       </nav>
-    </div>
-  </header>
+    </header>
 
-  <RouterView />
+    <div class="w-[min(100%,50rem)] p-4 flex-grow-1 flex flex-col items-stretch self-center">
+      <RouterView />
+    </div>
+
+    <footer class="space-y-2 px-1 py-5 items-center bg-sky-100/50 dark:bg-sky-900/50">
+      <p class="text-center">
+        Made with ❤️ by <a href="https://github.com/qixils">lexikiq</a>
+        with support from <a href="https://wiki.archiveteam.org/index.php/Twitch">ArchiveTeam</a>
+        and <a href="https://github.com/dunkyl">Dunkyl</a>
+      </p>
+      <nav class="flex flex-col justify-center items-center gap-2 md:flex-row">
+        <a href="https://github.com/qixils/speedrunarchiveclub">GitHub</a>
+        <span class="not-md:hidden text-neutral-700">·</span>
+        <a href="https://github.com/sponsors/qixils">Buy me a coffee</a>
+      </nav>
+    </footer>
+  </div>
 </template>
 
 <style>
-header {
-  line-height: 1.5;
-  max-height: 100vh;
+@reference "tailwindcss";
+
+html {
+  font-family: 'Noto Sans', sans-serif;
+  font-optical-sizing: auto;
+  font-style: normal;
+  font-variation-settings: 'wdth' 100;
+  --bg-bg: #001;
+  --text: #EEF;
+  --link: #AAF;
+  --link-visited: #BBE;
+  --link-hover: #FFF;
+  background-color: var(--bg-bg);
+  color: var(--text);
 }
 
-.logo {
-  display: block;
-  margin: 0 auto 2rem;
-}
+a {
+  color: var(--link);
 
-nav {
-  width: 100%;
-  font-size: 12px;
-  text-align: center;
-  margin-top: 2rem;
-}
-
-nav a.router-link-exact-active {
-  color: var(--color-text);
-}
-
-nav a.router-link-exact-active:hover {
-  background-color: transparent;
-}
-
-nav a {
-  display: inline-block;
-  padding: 0 1rem;
-  border-left: 1px solid var(--color-border);
-}
-
-nav a:first-of-type {
-  border: 0;
-}
-
-@media (min-width: 1024px) {
-  header {
-    display: flex;
-    place-items: center;
-    padding-right: calc(var(--section-gap) / 2);
+  &:visited {
+    color: var(--link-visited);
   }
 
-  .logo {
-    margin: 0 2rem 0 0;
+  &:hover {
+    color: var(--link-hover);
+    text-decoration: underline;
   }
+}
 
-  header .wrapper {
-    display: flex;
-    place-items: flex-start;
-    flex-wrap: wrap;
-  }
+.router-link-active {
+  @apply !text-sky-500 underline;
+}
 
-  nav {
-    text-align: left;
-    margin-left: -1rem;
-    font-size: 1rem;
-
-    padding: 1rem 0;
-    margin-top: 1rem;
+@media (prefers-color-scheme: light) {
+  html {
+    --bg-bg: #faf8ff;
+    --text: #112;
+    --link: hsl(251, 75%, 48%);
+    --link-visited: hsl(271, 75%, 55%);
+    --link-hover: #97e;
   }
 }
 </style>

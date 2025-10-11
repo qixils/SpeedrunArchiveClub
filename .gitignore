@@ -3,6 +3,8 @@
 !.env.example
 resume.json
 
+components.d.ts
+
 # Logs
 logs
 *.log

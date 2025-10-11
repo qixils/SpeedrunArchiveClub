@@ -4,6 +4,7 @@ import { z } from 'zod';
 import { searchVideos, getVideoById, addVideo, addMirror } from './utils/videos';
 import { MirrorSourceEnum } from './types/query';
 import { PaginatedResponseSchema, VideoOutputSchema, VideoSchema, VideoSearchParamsSchema } from './types/videos';
+import { cacheMem } from './utils/cache';
 
 type Context = {
   adminSecret?: string;
@@ -36,8 +37,25 @@ export const router = t.router({
     })
     .input(VideoSearchParamsSchema)
     .output(PaginatedResponseSchema(VideoOutputSchema))
-    .query(({ input }) => {
-      return searchVideos(input);
+    .query(async ({ input }) => {
+      const cacheKey = `findVideos//${input.query}//${input.after}//${input.types?.join(',')}//${input.acceptableMirrors?.join(',')}`
+      try {
+        const cached = await cacheMem.get(cacheKey)
+        if (cached) {
+          try {
+            return PaginatedResponseSchema(VideoOutputSchema).parse(cached)
+          } catch (e) {
+            console.error('Failed to parse', e)
+          }
+        }
+      } catch (e) {
+        console.warn("Failed to restore cache", e)
+      }
+
+      // TODO: cursor
+      const result = await searchVideos(input);
+      await cacheMem.set(cacheKey, result, 1000 * 60 * 60 * 24) // 24 hours
+      return result
     }),
 
   findVideoById: t.procedure

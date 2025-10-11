@@ -9,6 +9,7 @@
         "type-check": "npm run build"
     },
     "dependencies": {
+        "@keyv/compress-brotli": "^2.0.5",
         "@trpc/server": "^11.1.4",
         "@types/cors": "^2.8.18",
         "@types/express": "^5.0.2",
@@ -16,7 +17,10 @@
         "cors": "^2.8.5",
         "dotenv": "^16.0.3",
         "express": "^5.1.0",
+        "keyv": "^5.5.0",
         "pg": "^8.11.0",
+        "quick-lru": "^7.0.1",
+        "superjson": "^2.2.2",
         "swagger-ui-express": "^5.0.1",
         "trpc-to-openapi": "^2.3.1",
         "undici": "^7.10.0",

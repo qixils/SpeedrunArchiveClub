@@ -1,28 +1,21 @@
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue';
-import { QueryClient, useQuery } from '@tanstack/vue-query';
-import { trpc, type RouterOutput } from '../utils/trpc';
+import { ref, computed, onMounted, nextTick } from 'vue';
+import { hashKey, QueryClient, useQuery } from '@tanstack/vue-query';
+import { trpc } from '../utils/trpc';
 import VideoData from '../components/VideoData.vue';
-import { VideoTypeEnum, MirrorSourceEnum } from '../../../server/src/types/query';
-import type { z } from 'zod';
-
-type SearchResult = RouterOutput['findVideos'];
-type Video = SearchResult['items'][number];
+import { VideoTypeEnum, MirrorSourceEnum, type VideoType, type MirrorSource } from 'server/src/types/query';
+import { upperCamelCase } from '@/utils/strings';
 
 const searchText = ref('');
-const selectedTypes = ref<z.infer<typeof VideoTypeEnum>[]>([]);
-const selectedMirrors = ref<z.infer<typeof MirrorSourceEnum>[]>([]);
-const currentPage = ref(1);
+const _selectedTypes = ref<VideoType[]>([]);
+const selectedTypes = computed(() => [...new Set(_selectedTypes.value)].sort())
+const _selectedMirrors = ref<MirrorSource[]>(['INTERNET_ARCHIVE', 'YOUTUBE']);
+const selectedMirrors = computed(() => [...new Set(_selectedMirrors.value)].sort())
+const currentPage = ref<string>();
 const activeVideoId = ref<number>();
 
 const typeOptions = Object.values(VideoTypeEnum.enum);
 const mirrorOptions = Object.values(MirrorSourceEnum.enum);
-
-const formatMirrorName = (name: string) => {
-  return name.split('_')
-    .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
-    .join(' ');
-};
 
 const isUrlOrId = computed(() => {
   const value = searchText.value.trim();
@@ -47,7 +40,7 @@ const refetch = async () => {
     }
   }
 
-  if ((data?.totalPages || 0) > 1) return;
+  if (data?.after || currentPage.value) return;
 
   // Determine which sets to use for permutations: if empty, use all options
   const typeSet = selectedTypes.value.length ? selectedTypes.value : typeOptions;
@@ -91,7 +84,7 @@ function getAllSubsets<T>(arr: readonly T[]): T[][] {
       result.push(result[i].concat(el));
     }
   }
-  return result;
+  return result.map(arr => [...new Set(arr)].sort());
 }
 
 // Helper: all supersets of a subset within a set (for permutations containing at least all elements in subset)
@@ -102,8 +95,8 @@ function getAllSupersets<T>(subset: T[], fullset: readonly T[]): T[][] {
 }
 
 const search = () => {
-  if (!searchText.value.trim()) return;
-  currentPage.value = 1; // Reset to first page on new search
+  // if (!searchText.value.trim()) return;
+  currentPage.value = undefined; // Reset to first page on new search
   refetch();
 };
 
@@ -116,19 +109,40 @@ const { data: results, isFetched, isFetching, refetch: _refetch } = useQuery(
       query: searchText.value,
       types: selectedTypes.value.length > 0 ? selectedTypes.value : undefined,
       acceptableMirrors: selectedMirrors.value.length > 0 ? selectedMirrors.value : undefined,
-      page: currentPage.value,
+      after: currentPage.value,
     }),
     enabled: false,
   },
   queryClient,
 );
 
-const setPage = async (page: number) => {
-  currentPage.value = page
-  refetch()
-};
+const previousPages = ref<Record<string, string | null>>({})
 
-// Simpler approach using a ref to track active video
+const nextPageCursor = computed<string | undefined>(() => results.value?.after)
+const previousPageCursor = computed<string | null | undefined>(() => currentPage.value ? previousPages.value[hashKey(['search', searchText.value, selectedTypes.value, selectedMirrors.value, currentPage.value])] : undefined)
+
+const nextPage = async () => {
+  if (nextPageCursor.value === undefined) return
+
+  const nextHash = hashKey(['search', searchText.value, selectedTypes.value, selectedMirrors.value, nextPageCursor.value])
+  previousPages.value[nextHash] = currentPage.value || null
+
+  currentPage.value = nextPageCursor.value || undefined
+
+  await nextTick()
+  if (isFetched.value) return
+  refetch() // not yet cached, lets grab it
+}
+
+const previousPage = async () => {
+  if (previousPageCursor.value === undefined) return
+  currentPage.value = previousPageCursor.value || undefined
+
+  await nextTick()
+  if (isFetched.value) return
+  refetch() // we lost the cache, grab it again
+}
+
 const handleSetActive = (videoId: number) => {
   if (activeVideoId.value === videoId) activeVideoId.value = undefined;
   else activeVideoId.value = videoId;
@@ -139,60 +153,46 @@ const handleSearchChannel = (channelId: number) => {
   search();
 };
 
-const paginationRange = computed(() => {
-  const totalPages = results.value?.totalPages ?? 0;
-  if (totalPages <= 1) return [];
-
-  // Always show first, last, current page, and one page before/after current
-  const pages = new Set([
-    1,
-    Math.max(1, currentPage.value - 1),
-    currentPage.value,
-    Math.min(totalPages, currentPage.value + 1),
-    totalPages
-  ]);
-
-  return Array.from(pages).sort((a, b) => a - b);
-});
+onMounted(() => search())
 </script>
 
 <template>
-  <main class="mx-auto flex flex-col items-center p-4 gap-4">
-    <div class="flex flex-col gap-4 w-full max-w-2xl">
+  <main class="flex flex-col items-stretch gap-4">
+    <p class="text-center">Search for metadata and video archives of Twitch broadcasts</p>
+
+    <div class="flex flex-col items-stretch gap-2">
+      <div class="flex flex-row">
+        <input v-model="searchText" @keyup.enter="search"
+          class="rounded-l-lg py-2 px-3 w-full border border-r-0 border-emerald-400 outline-none"
+          placeholder="Enter video URL, title, or channel name" />
+        <button @click="search"
+          class="bg-emerald-400 hover:bg-emerald-600 active:bg-emerald-700 text-white hover:text-emerald-200 active:text-emerald-400 transition-colors duration-150 px-4 rounded-r-lg">
+          <i-mdi-search class="size-5" />
+        </button>
+      </div>
+      <p v-if="searchText && !isUrlOrId" class="text-sm text-amber-600">
+        <i-mdi-alert class="inline size-4 -mt-0.5" /> For best results, search by video ID or URL
+      </p>
+    </div>
+
+    <div class="flex flex-row gap-4">
       <div class="flex flex-col gap-2">
-        <div class="flex flex-row">
-          <input v-model="searchText" @keyup.enter="search"
-            class="rounded-l-lg py-2 px-3 w-full border border-r-0 border-emerald-400 outline-none"
-            placeholder="Enter video URL, title, or channel name" />
-          <button @click="search"
-            class="bg-emerald-400 hover:bg-emerald-600 active:bg-emerald-700 text-white hover:text-emerald-200 active:text-emerald-400 transition-colors duration-150 px-4 rounded-r-lg">
-            <i-mdi-search class="size-5" />
-          </button>
+        <span class="font-semibold text-sm">Video Type</span>
+        <div class="flex flex-row gap-2">
+          <label v-for="type in typeOptions" :key="type" class="flex items-center gap-1">
+            <input type="checkbox" v-model="_selectedTypes" :value="type" class="accent-emerald-600" />
+            <span class="text-sm capitalize">{{ type }}</span>
+          </label>
         </div>
-        <p v-if="searchText && !isUrlOrId" class="text-sm text-amber-600">
-          <i-mdi-alert class="inline size-4 -mt-0.5" /> For best results, search by video ID or URL
-        </p>
       </div>
 
-      <div class="flex flex-row gap-4">
-        <div class="flex flex-col gap-2">
-          <span class="font-semibold text-sm">Video Type</span>
-          <div class="flex flex-row gap-2">
-            <label v-for="type in typeOptions" :key="type" class="flex items-center gap-1">
-              <input type="checkbox" v-model="selectedTypes" :value="type" class="accent-emerald-600" />
-              <span class="text-sm capitalize">{{ type }}</span>
-            </label>
-          </div>
-        </div>
-
-        <div class="flex flex-col gap-2">
-          <span class="font-semibold text-sm">Available Mirrors</span>
-          <div class="flex flex-row gap-2">
-            <label v-for="mirror in mirrorOptions" :key="mirror" class="flex items-center gap-1">
-              <input type="checkbox" v-model="selectedMirrors" :value="mirror" class="accent-emerald-600" />
-              <span class="text-sm">{{ formatMirrorName(mirror) }}</span>
-            </label>
-          </div>
+      <div class="flex flex-col gap-2">
+        <span class="font-semibold text-sm">Available Mirrors</span>
+        <div class="flex flex-row gap-2">
+          <label v-for="mirror in mirrorOptions" :key="mirror" class="flex items-center gap-1">
+            <input type="checkbox" v-model="_selectedMirrors" :value="mirror" class="accent-emerald-600" />
+            <span class="text-sm">{{ $t(`mirror.${mirror.toLowerCase()}`, upperCamelCase(mirror)) }}</span>
+          </label>
         </div>
       </div>
     </div>
@@ -201,19 +201,19 @@ const paginationRange = computed(() => {
       Loading...
     </div>
 
-    <div v-else-if="results?.items.length" class="w-full max-w-2xl space-y-4">
+    <div v-else-if="results?.items.length" class="space-y-2">
       <VideoData v-for="video in results.items" :key="video.id" :video="video" :active="video.id === activeVideoId"
         @set-active="handleSetActive" @search-channel="handleSearchChannel" />
 
       <!-- Pagination -->
-      <div v-if="results.totalPages > 1" class="flex justify-center gap-2 mt-4">
-        <button v-for="page in paginationRange" :key="page" @click="setPage(page)" :class="[
-          'px-3 py-1 rounded',
-          page === currentPage
-            ? 'bg-emerald-500 text-white'
-            : 'bg-emerald-100 hover:bg-emerald-200 text-emerald-800'
-        ]">
-          {{ page }}
+      <div class="flex justify-center gap-0.5 mt-4">
+        <button @click="previousPage()" :disabled="previousPageCursor === undefined"
+          class="rounded-l px-2.5 py-1.5 bg-emerald-100 enabled:hover:bg-emerald-200 text-emerald-800 disabled:opacity-50 font-semibold">
+          ⮜ Previous
+        </button>
+        <button @click="nextPage()" :disabled="nextPageCursor === undefined"
+          class="rounded-r px-2.5 py-1.5 bg-emerald-100 enabled:hover:bg-emerald-200 text-emerald-800 disabled:opacity-50 font-semibold">
+          Next ⮞
         </button>
       </div>
     </div>

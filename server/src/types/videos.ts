@@ -9,16 +9,16 @@ export const TwitchUserSchema = z.object({
 }).nullable()
 
 export const VideoSchema = z.object({
-  id: z.coerce.number().int(),
-  channel_id: z.coerce.number().int(),
+  id: z.coerce.number().int().nonnegative(),
+  channel_id: z.coerce.number().int().nonnegative(),
   title: z.string(),
-  duration_seconds: z.coerce.number().int(),
-  view_count: z.coerce.number().int(),
-  language: z.string().optional(),
+  duration_seconds: z.coerce.number().int().nonnegative(),
+  view_count: z.coerce.number().int().nonnegative(),
+  language: z.string().nullish(),
   type: VideoTypeEnum,
-  created_at: z.date(),
+  created_at: z.coerce.date(),
   mirrors: z.array(z.object({
-    id: z.coerce.number().int(),
+    id: z.coerce.number().int().nonnegative(),
     source: MirrorSourceEnum,
     url: z.string(),
   })).default([]),
@@ -44,7 +44,7 @@ export const VideoSearchParamsSchema = z.object({
   query: z.string(),
   types: z.array(VideoTypeEnum).optional(),
   acceptableMirrors: z.array(MirrorSourceEnum).optional(),
-  page: z.number().int().min(1).default(1),
+  after: z.string().optional(),
 })
 
 export type VideoSearchParams = z.infer<typeof VideoSearchParamsSchema>
@@ -52,13 +52,11 @@ export type VideoSearchParams = z.infer<typeof VideoSearchParamsSchema>
 export const PaginatedResponseSchema = <T extends z.ZodTypeAny>(schema: T) => {
   return z.object({
     items: z.array(schema),
-    totalPages: z.number(),
-    currentPage: z.number(),
+    after: z.string().optional(),
   })
 }
 
 export interface PaginatedResponse<T> {
   items: T[];
-  totalPages: number;
-  currentPage: number;
+  after?: string;
 }

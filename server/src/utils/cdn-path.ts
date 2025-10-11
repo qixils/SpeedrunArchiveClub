@@ -17,5 +17,5 @@ export function getCdnBaseDir(): string {
  * Returns the absolute path to a specific m3u8 file in the CDN directory.
  */
 export function getCdnM3u8Path(videoId: number | string): string {
-  return path.join(getCdnBaseDir(), `${videoId}.m3u8`);
+  return path.join(getCdnBaseDir(), `${videoId}.m3u8.zst`);
 }
