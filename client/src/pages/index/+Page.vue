@@ -1,10 +1,13 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, nextTick } from 'vue';
 import { hashKey, QueryClient, useQuery } from '@tanstack/vue-query';
-import { trpc } from '../utils/trpc';
-import VideoData from '../components/VideoData.vue';
+import { trpc } from '@/utils/trpc';
+import VideoData from '@/components/VideoData.vue';
 import { VideoTypeEnum, MirrorSourceEnum, type VideoType, type MirrorSource } from 'server/src/types/query';
 import { upperCamelCase } from '@/utils/strings';
+import { useI18n } from '@/composables/useI18n';
+
+const { t } = useI18n()
 
 const searchText = ref('');
 const _selectedTypes = ref<VideoType[]>([]);
@@ -191,7 +194,7 @@ onMounted(() => search())
         <div class="flex flex-row gap-2">
           <label v-for="mirror in mirrorOptions" :key="mirror" class="flex items-center gap-1">
             <input type="checkbox" v-model="_selectedMirrors" :value="mirror" class="accent-emerald-600" />
-            <span class="text-sm">{{ $t(`mirror.${mirror.toLowerCase()}`, upperCamelCase(mirror)) }}</span>
+            <span class="text-sm">{{ t(`mirror.${mirror.toLowerCase()}`, upperCamelCase(mirror)) }}</span>
           </label>
         </div>
       </div>

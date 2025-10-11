@@ -3,6 +3,7 @@ import { ref, computed, useTemplateRef, watch, shallowRef } from 'vue';
 import type { RouterOutput } from '@/utils/trpc';
 import { upperCamelCase } from '@/utils/strings';
 import Hls from 'hls.js';
+import { useI18n } from '@/composables/useI18n';
 
 type VideoType = RouterOutput['findVideos']['items'][number];
 
@@ -10,6 +11,8 @@ interface Props {
   video: VideoType;
   active?: boolean;
 }
+
+const { t } = useI18n()
 
 const props = withDefaults(defineProps<Props>(), {
   active: false,
@@ -196,7 +199,7 @@ watch([iaVideoEl, useCorsProxy], ([video, cors]) => {
                 <button v-for="(mirror, idx) in video.mirrors" :key="mirror.source"
                   class="px-2 py-1 rounded bg-blue-100 hover:bg-blue-200 text-blue-800 font-medium"
                   @click="selectMirror(idx)" :class="{ 'bg-blue-300': selectedMirrorIdx === idx }">
-                  {{ $t(`short_mirror.${mirror.source.toLowerCase()}`, upperCamelCase(mirror.source)) }}
+                  {{ t(`short_mirror.${mirror.source.toLowerCase()}`, upperCamelCase(mirror.source)) }}
                 </button>
               </div>
             </div>
@@ -207,9 +210,10 @@ watch([iaVideoEl, useCorsProxy], ([video, cors]) => {
                 crossorigin="anonymous" playsinline></video>
               <p class="text-end">
                 web playback may require
-                <a @click="useCorsProxy = !useCorsProxy" class="cursor-pointer"> cors proxy </a>
+                <a @click="useCorsProxy = !useCorsProxy" class="cursor-pointer">cors proxy</a>
+                ({{ useCorsProxy ? 'on' : 'off' }})
                 <br />or (more reliable) installing
-                <a href="/about#cors-patchers" target="_blank"> cors patchers </a>
+                <a href="/about#cors-patchers" target="_blank">cors patchers</a>
               </p>
               <p class="text-end">
                 or: <a :href="selectedMirror.url">download stream file</a>

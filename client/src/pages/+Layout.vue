@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { onMounted } from 'vue';
-import { RouterLink, RouterView } from 'vue-router'
 
 onMounted(() => {
   window.addEventListener('vite:preloadError', () => {
@@ -14,14 +13,14 @@ onMounted(() => {
   <div id="root" class="flex flex-col min-h-dvh">
     <header class="space-y-2 px-1 py-2 items-center bg-sky-100/50 dark:bg-sky-900/50">
       <nav class="flex flex-col justify-center items-center gap-2 md:flex-row">
-        <RouterLink to="/">Search</RouterLink>
+        <a href="/">Search</a>
         <span class="not-md:hidden text-neutral-700">·</span>
-        <RouterLink to="/about">About</RouterLink>
+        <a href="/about">About</a>
       </nav>
     </header>
 
     <div class="w-[min(100%,50rem)] p-4 flex-grow-1 flex flex-col items-stretch self-center">
-      <RouterView />
+      <slot />
     </div>
 
     <footer class="space-y-2 px-1 py-5 items-center bg-sky-100/50 dark:bg-sky-900/50">
@@ -42,7 +41,12 @@ onMounted(() => {
 </template>
 
 <style>
+@import 'tailwindcss';
 @reference "tailwindcss";
+
+button {
+  cursor: pointer;
+}
 
 html {
   font-family: 'Noto Sans', sans-serif;

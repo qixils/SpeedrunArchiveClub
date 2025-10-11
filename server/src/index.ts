@@ -46,7 +46,6 @@ async function startServer() {
     baseUrl,
   });
   openApiDocument.servers = [{ url: baseUrl, description: 'Production' }]
-  console.log("docs", baseUrl, JSON.stringify(openApiDocument.servers))
 
   // Serve Swagger UI at /docs
   app.use('/docs', swaggerUi.serve, swaggerUi.setup(openApiDocument));
