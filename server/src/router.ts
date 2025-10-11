@@ -38,7 +38,7 @@ export const router = t.router({
     .input(VideoSearchParamsSchema)
     .output(PaginatedResponseSchema(VideoOutputSchema))
     .query(async ({ input }) => {
-      const cacheKey = `findVideos//${input.query}//${input.after}//${input.types?.join(',')}//${input.acceptableMirrors?.join(',')}`
+      const cacheKey = `findVideos//${input.query}//${input.after}//${input.types?.sort().join(',')}//${input.acceptableMirrors?.sort().join(',')}`
       try {
         const cached = await cacheMem.get(cacheKey)
         if (cached) {
