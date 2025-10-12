@@ -42,7 +42,6 @@ onMounted(() => {
 
 <style>
 @import 'tailwindcss';
-@reference "tailwindcss";
 
 button {
   cursor: pointer;

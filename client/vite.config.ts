@@ -16,7 +16,7 @@ export default defineConfig({
     vue(),
     vike(),
     // vueDevTools(),
-    tailwindcss(),
+    tailwindcss(), // todo: not defining css classes correctly
     components({
       resolvers: [
         iconsResolver(),

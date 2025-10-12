@@ -93,7 +93,8 @@
   content: '';
   position: absolute;
   inset: -0.25rem -0.5rem;
-  background-color: --alpha(var(--color-emerald-500) / 20%);
+  /* emerald-500 */
+  background-color: oklch(69.6% 0.17 162.48 / 20%);
   border-radius: 0.25rem;
   z-index: -1;
 }
