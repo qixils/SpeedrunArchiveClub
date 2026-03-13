@@ -177,6 +177,10 @@ watch([iaVideoEl, useCorsProxy], ([video, cors]) => {
         <div class="flex flex-row gap-1">
           <div>
             <p class="flex flex-row items-center gap-1">
+              <i-fa7-solid:hashtag class="size-5" />
+              {{ video.id }}
+            </p>
+            <p class="flex flex-row items-center gap-1">
               <i-mdi:clock class="size-5" />
               {{ formatDuration(video.duration_seconds) }}
             </p>
